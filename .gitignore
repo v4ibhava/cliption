@@ -1,0 +1,96 @@
+# ==========================================
+# Cliption - 100% Offline AI Studio Gitignore
+# ==========================================
+
+# Model weights & AI caches (Whisper base, small, large-v3-turbo, HuggingFace)
+/storage/models/*
+!/storage/models/.gitkeep
+/models/
+*.bin
+*.pt
+*.pth
+*.onnx
+*.safetensors
+CACHEDIR.TAG
+
+# User media, uploads, outputs & temp files
+/storage/uploads/*
+!/storage/uploads/.gitkeep
+/storage/outputs/*
+!/storage/outputs/.gitkeep
+/storage/temp/*
+!/storage/temp/.gitkeep
+
+# Media files anywhere in repo
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.webm
+*.wav
+*.mp3
+*.m4a
+*.ass
+*.srt
+*.vtt
+
+# Node & Frontend dependencies
+node_modules/
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tsbuildinfo
+.eslintcache
+
+# Python caches & virtual environments
+__pycache__/
+*/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+backend/.venv/
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs & diagnostic dumps
+*.log
+storage/temp/ffmpeg*.log
+storage/temp/prog*.txt
+
+# OS & Editor generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment variables & local overrides
+.env
+.env.local
+.env.*.local

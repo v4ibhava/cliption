@@ -1,0 +1,24 @@
+[project]
+name = "cliption-backend"
+version = "0.1.0"
+description = "Cliption - Smart Video Cropper & Multilingual Dynamic Captions Backend"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "pydantic>=2.8.0",
+    "python-multipart>=0.0.9",
+    "faster-whisper>=1.0.0",
+    "static-ffmpeg>=2.7",
+    "psutil>=6.0.0",
+    "deep-translator>=1.11.4",
+    "nvidia-cublas-cu12>=12.9.2.10",
+    "nvidia-cudnn-cu12>=9.27.0.42",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
