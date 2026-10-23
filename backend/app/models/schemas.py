@@ -69,7 +69,7 @@ class CropConfig(BaseModel):
     zoom: float = 1.0   # 0.5 to 2.0 (1.0 = standard fill, <1.0 = zoom out, >1.0 = zoom in)
     blur_intensity: int = 25
     motion_blur: bool = False
-    motion_blur_intensity: int = 50 # 1 to 100
+    motion_blur_intensity: float = 0.50 # Premiere Pro RSMB scale (0.10 to 1.50, default 0.50)
 
 # Requests
 class TranscribeRequest(BaseModel):

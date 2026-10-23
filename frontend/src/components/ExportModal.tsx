@@ -77,7 +77,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         task_id: '',
         status: 'failed',
         progress: 0,
-        message: 'COULD NOT QUEUE RENDER',
+        message: 'Could not queue render',
         error: e.message,
       });
     } finally {
@@ -89,21 +89,21 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const isFailed = taskStatus?.status === 'failed';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-none animate-fade-in font-mono">
-      <div className="bg-[#18191B] border-4 border-black max-w-lg w-full p-6 shadow-brutal-lg relative text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+      <div className="bg-[#14161b] border border-zinc-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative text-white">
         {/* Top Header */}
-        <div className="flex items-center justify-between pb-3 mb-4 border-b-2 border-black">
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 bg-[#FFE600] border border-black inline-block" />
-            <h2 className="text-base font-black uppercase tracking-wider text-[#FFE600]">
-              [EXPORT // RENDER PIPELINE]
+        <div className="flex items-center justify-between pb-4 mb-4 border-b border-zinc-800">
+          <div>
+            <h2 className="text-lg font-semibold text-white">
+              Export Video
             </h2>
+            <p className="text-xs text-zinc-400 mt-0.5">Render cropped video with burned-in animated subtitles</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 bg-[#26282B] border-2 border-black hover:bg-black text-white hover:text-[#FFE600] transition"
+            className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
           >
-            <X className="w-4 h-4 stroke-[3]" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
@@ -111,156 +111,165 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         {!taskId && (
           <div className="space-y-4 mb-6">
             <div>
-              <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block mb-2">
-                // TARGET RESOLUTION
+              <label className="text-xs font-medium text-zinc-400 block mb-2">
+                Target Resolution
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setQuality('1080p')}
-                  className={`p-3 border-2 border-black text-left transition select-none ${
+                  className={`p-3 rounded-xl border text-left transition select-none ${
                     quality === '1080p'
-                      ? 'bg-[#FFE600] text-black font-black shadow-brutal'
-                      : 'bg-[#26282B] text-zinc-300 hover:bg-[#32353A]'
+                      ? 'border-indigo-500 bg-indigo-500/10 text-white font-medium ring-1 ring-indigo-500/50'
+                      : 'border-zinc-800 bg-[#1a1d24] text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  <div className="font-black text-xs uppercase">1080P FULL HD</div>
-                  <div className="text-[10px] opacity-80 uppercase">Crisp upload quality</div>
+                  <div className="font-semibold text-xs text-white">1080p Full HD</div>
+                  <div className="text-[11px] text-zinc-400 mt-0.5">High definition output</div>
                 </button>
 
                 <button
                   onClick={() => setQuality('720p')}
-                  className={`p-3 border-2 border-black text-left transition select-none ${
+                  className={`p-3 rounded-xl border text-left transition select-none ${
                     quality === '720p'
-                      ? 'bg-[#FFE600] text-black font-black shadow-brutal'
-                      : 'bg-[#26282B] text-zinc-300 hover:bg-[#32353A]'
+                      ? 'border-indigo-500 bg-indigo-500/10 text-white font-medium ring-1 ring-indigo-500/50'
+                      : 'border-zinc-800 bg-[#1a1d24] text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  <div className="font-black text-xs uppercase">720P FAST RENDER</div>
-                  <div className="text-[10px] opacity-80 uppercase">Optimized for low-end</div>
+                  <div className="font-semibold text-xs text-white">720p Fast Render</div>
+                  <div className="text-[11px] text-zinc-400 mt-0.5">Faster encoding speed</div>
                 </button>
               </div>
             </div>
 
-            <div className="p-3 bg-black border-2 border-black flex items-center justify-between text-xs">
-              <span className="text-zinc-400 uppercase font-bold">ENCODER:</span>
-              <span className="font-bold flex items-center gap-1.5 text-white">
-                {useGpu ? (
-                  <>
-                    <Zap className="w-3.5 h-3.5 text-[#00FF66] fill-[#00FF66]" /> NVIDIA NVENC ACCELERATED
-                  </>
-                ) : (
-                  <>
-                    <Cpu className="w-3.5 h-3.5 text-[#00F0FF]" /> CPU LIBX264 VERYFAST
-                  </>
-                )}
-              </span>
-            </div>
-
-            <div className="p-3 bg-black border-2 border-black flex items-center justify-between text-xs">
-              <span className="text-zinc-400 uppercase font-bold">FRAMING:</span>
-              <span className="font-black text-[#FFE600] uppercase">
-                {crop.aspect_ratio} • {crop.fit_mode}
-              </span>
-            </div>
-
-            <div className="p-3 bg-black border-2 border-black flex items-center justify-between text-xs">
-              <span className="text-zinc-400 uppercase font-bold">RSMB MOTION BLUR:</span>
-              <span className={`font-black uppercase ${crop.motion_blur ? 'text-[#00F0FF]' : 'text-zinc-500'}`}>
-                {crop.motion_blur ? `ENABLED (${crop.motion_blur_intensity || 50}%)` : 'DISABLED'}
-              </span>
-            </div>
-
-            {segments.length === 0 ? (
-              <div className="p-3 bg-[#FFE600] text-black border-2 border-black flex items-start gap-2 text-xs font-bold shadow-brutal-sm">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 stroke-[2.5]" />
-                <div>
-                  <span className="font-black uppercase">NO CAPTIONS TRANSCRIBED YET</span>
-                  <p className="font-normal text-[11px] opacity-90 mt-0.5">
-                    Click &apos;Auto-Transcribe&apos; on the left panel to generate subtitles, or proceed to export video without captions.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="p-3 bg-black border-2 border-black flex items-center justify-between text-xs">
-                <span className="text-zinc-400 uppercase font-bold">CAPTIONS:</span>
-                <span className="font-bold text-[#00FF66] flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  {segments.length} BLOCKS (FIRST AT {segments[0]?.start?.toFixed(1)}s)
+            <div className="space-y-2 text-xs">
+              <div className="p-3 bg-[#1a1d24] border border-zinc-800/80 rounded-lg flex items-center justify-between">
+                <span className="text-zinc-400">Encoder:</span>
+                <span className="font-medium flex items-center gap-1.5 text-white">
+                  {useGpu ? (
+                    <>
+                      <Zap className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" /> NVIDIA NVENC Accelerated
+                    </>
+                  ) : (
+                    <>
+                      <Cpu className="w-3.5 h-3.5 text-indigo-400" /> CPU libx264 veryfast
+                    </>
+                  )}
                 </span>
               </div>
-            )}
+
+              <div className="p-3 bg-[#1a1d24] border border-zinc-800/80 rounded-lg flex items-center justify-between">
+                <span className="text-zinc-400">Framing:</span>
+                <span className="font-medium text-white">
+                  {crop.aspect_ratio} · {crop.fit_mode}
+                </span>
+              </div>
+
+              <div className="p-3 bg-[#1a1d24] border border-zinc-800/80 rounded-lg flex items-center justify-between">
+                <span className="text-zinc-400">Motion Blur (RSMB):</span>
+                <span className={`font-medium ${crop.motion_blur ? 'text-indigo-400' : 'text-zinc-500'}`}>
+                  {crop.motion_blur ? `Enabled (${crop.motion_blur_intensity || 50}%)` : 'Disabled'}
+                </span>
+              </div>
+
+              {segments.length === 0 ? (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-lg flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-medium">No subtitles generated yet</span>
+                    <p className="text-[11px] opacity-90 mt-0.5">
+                      You can generate captions using &quot;Generate Captions&quot; in the editor, or proceed to export the cropped video without subtitles.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 bg-[#1a1d24] border border-zinc-800/80 rounded-lg flex items-center justify-between">
+                  <span className="text-zinc-400">Subtitles:</span>
+                  <span className="font-medium text-emerald-400 flex items-center gap-1.5">
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    {segments.length} blocks (Speech starts at {segments[0]?.start?.toFixed(1)}s)
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {/* Active Progress View */}
         {taskId && (
           <div className="py-4 space-y-4">
-            <div className="flex items-center justify-between text-xs font-black uppercase">
-              <span className="text-zinc-200">
-                {taskStatus?.message || 'INITIALIZING ENCODER...'}
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-zinc-300 font-medium">
+                {taskStatus?.message || 'Initializing encoder...'}
               </span>
-              <span className="text-[#FFE600] bg-black border border-black px-2 py-0.5">
+              <span className="text-indigo-400 font-semibold font-mono">
                 {taskStatus?.progress || 0}%
               </span>
             </div>
 
-            {/* Brutalist Progress Bar */}
-            <div className="w-full h-5 bg-black border-2 border-black p-0.5">
+            {/* Modern Progress Bar */}
+            <div className="w-full h-2.5 bg-zinc-800 rounded-full overflow-hidden">
               <div
-                className="h-full bg-[#FFE600] transition-all duration-300"
+                className="h-full bg-indigo-600 rounded-full transition-all duration-300"
                 style={{ width: `${taskStatus?.progress || 0}%` }}
               />
             </div>
 
             {isCompleted && (
-              <div className="p-3 bg-[#00FF66] text-black border-2 border-black font-black text-xs flex items-center gap-2 shadow-brutal">
-                <CheckCircle2 className="w-4 h-4 flex-shrink-0 stroke-[3]" />
-                <span>RENDER FINISHED! 100% OFFLINE EXPORT READY.</span>
+              <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl font-medium text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                <span>Render completed! 100% offline video ready.</span>
               </div>
             )}
 
             {isFailed && (
-              <div className="p-3 bg-[#FF3366] text-black border-2 border-black font-black text-xs flex items-center gap-2 shadow-brutal">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 stroke-[3]" />
-                <span>{taskStatus?.error || 'RENDERING ERROR'}</span>
+              <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl font-medium text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{taskStatus?.error || 'Rendering error occurred'}</span>
               </div>
+            )}
+
+            {isCompleted && taskStatus?.download_url && (
+              <a
+                href={taskStatus.download_url}
+                download
+                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download {taskStatus.output_filename}</span>
+              </a>
             )}
           </div>
         )}
 
-        {/* Actions */}
-        <div className="mt-5 pt-3 border-t-2 border-black">
-          {!taskId && (
+        {/* Bottom Actions */}
+        {!taskId && (
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+
             <button
               onClick={handleStartRender}
               disabled={isStarting}
-              className="btn-brutal w-full py-3 bg-[#FFE600] hover:bg-[#FFF066] text-black font-black text-xs flex items-center justify-center gap-2 disabled:opacity-50"
+              className="px-5 py-2 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
             >
               {isStarting ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin stroke-[3]" />
-                  <span>STARTING ENCODER...</span>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Starting...</span>
                 </>
               ) : (
                 <>
-                  <Film className="w-4 h-4 stroke-[2.5]" />
-                  <span>START EXPORT ({crop.aspect_ratio})</span>
+                  <Film className="w-3.5 h-3.5" />
+                  <span>Start Render</span>
                 </>
               )}
             </button>
-          )}
-
-          {isCompleted && (
-            <a
-              href={taskStatus?.download_url || '#'}
-              download={taskStatus?.output_filename || 'cliption_video.mp4'}
-              className="btn-brutal w-full py-3 bg-[#00FF66] hover:bg-[#33FF85] text-black font-black text-xs flex items-center justify-center gap-2 block text-center"
-            >
-              <Download className="w-4 h-4 stroke-[3] inline" />
-              <span>DOWNLOAD FINAL VIDEO (.MP4)</span>
-            </a>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

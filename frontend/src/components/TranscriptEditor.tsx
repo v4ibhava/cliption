@@ -13,24 +13,24 @@ interface TranscriptEditorProps {
 }
 
 const SUPPORTED_LANGUAGES: { [key: string]: string } = {
-  original: 'ORIGINAL (AUDIO)',
-  en: 'ENGLISH',
-  hi: 'HINDI (हिंदी)',
-  es: 'SPANISH (ESPAÑOL)',
-  fr: 'FRENCH (FRANÇAIS)',
-  de: 'GERMAN (DEUTSCH)',
-  ja: 'JAPANESE (日本語)',
-  'zh-CN': 'CHINESE (中文)',
-  ar: 'ARABIC (العربية)',
-  pt: 'PORTUGUESE (PORTUGUÊS)',
-  ru: 'RUSSIAN (РУССКИЙ)',
-  it: 'ITALIAN (ITALIANO)',
-  ko: 'KOREAN (한국어)',
-  bn: 'BENGALI (বাংলা)',
-  mr: 'MARATHI (मराठी)',
-  ta: 'TAMIL (தமிழ்)',
-  te: 'TELUGU (తెలుగు)',
-  ur: 'URDU (اردو)',
+  original: 'Original (Audio)',
+  en: 'English',
+  hi: 'Hindi (हिंदी)',
+  es: 'Spanish (Español)',
+  fr: 'French (Français)',
+  de: 'German (Deutsch)',
+  ja: 'Japanese (日本語)',
+  'zh-CN': 'Chinese (中文)',
+  ar: 'Arabic (العربية)',
+  pt: 'Portuguese (Português)',
+  ru: 'Russian (Русский)',
+  it: 'Italian (Italiano)',
+  ko: 'Korean (한국어)',
+  bn: 'Bengali (বাংলা)',
+  mr: 'Marathi (मराठी)',
+  ta: 'Tamil (தமிழ்)',
+  te: 'Telugu (తెలుగు)',
+  ur: 'Urdu (اردو)',
 };
 
 export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
@@ -100,33 +100,32 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   };
 
   return (
-    <div className="bg-[#18191B] border-2 border-black p-4 flex flex-col h-full space-y-3 shadow-brutal font-mono">
+    <div className="bg-[#14161b] border border-zinc-800 rounded-xl p-4 flex flex-col h-full space-y-3">
       {/* Top Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b-2 border-black">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-zinc-800/80">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 bg-[#FFE600] inline-block" />
-          <h3 className="text-xs font-black uppercase text-white tracking-wider">
-            // TRANSCRIPT & AI TRANSLATION
+          <h3 className="text-sm font-semibold text-white">
+            Transcript & Captions
           </h3>
           {detectedLanguage && (
-            <span className="bg-black text-[#00FF66] border border-black px-1.5 py-0.2 text-[9px] font-black uppercase">
-              LANG: {detectedLanguage.toUpperCase()}
+            <span className="bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-full text-[10px] font-medium border border-zinc-700/60 uppercase">
+              {detectedLanguage}
             </span>
           )}
         </div>
 
         <div className="flex items-center gap-2">
           {/* Language Selector */}
-          <div className="flex items-center gap-1 bg-black border-2 border-black px-2 py-1 text-xs">
-            <Languages className="w-3.5 h-3.5 text-[#FFE600]" />
+          <div className="flex items-center gap-1.5 bg-[#1a1d24] border border-zinc-800 rounded-lg px-2.5 py-1 text-xs">
+            <Languages className="w-3.5 h-3.5 text-zinc-400" />
             <select
               value={selectedLang}
               onChange={(e) => handleTranslate(e.target.value)}
               disabled={isTranslating || segments.length === 0}
-              className="bg-transparent text-white font-bold text-[10px] focus:outline-none cursor-pointer"
+              className="bg-transparent text-zinc-200 text-xs focus:outline-none cursor-pointer"
             >
               {Object.entries(SUPPORTED_LANGUAGES).map(([code, name]) => (
-                <option key={code} value={code} className="bg-black text-white">
+                <option key={code} value={code} className="bg-[#1a1d24] text-white">
                   {name}
                 </option>
               ))}
@@ -136,17 +135,17 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
           <button
             onClick={onTranscribe}
             disabled={isTranscribing}
-            className="btn-brutal bg-[#FFE600] hover:bg-[#FFF066] text-black px-3 py-1 text-xs flex items-center gap-1.5 disabled:opacity-50"
+            className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
           >
             {isTranscribing ? (
               <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin stroke-[3]" />
-                <span>AI WORKING...</span>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Transcribing...</span>
               </>
             ) : (
               <>
-                <Wand2 className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>{segments.length > 0 ? 'RE-TRANSCRIBE' : 'GENERATE AI CAPTIONS'}</span>
+                <Wand2 className="w-3.5 h-3.5" />
+                <span>{segments.length > 0 ? 'Re-transcribe' : 'Generate Captions'}</span>
               </>
             )}
           </button>
@@ -154,13 +153,13 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
       </div>
 
       {/* Segment & Word List */}
-      <div className="flex-1 overflow-y-auto max-h-[460px] pr-1 space-y-2.5">
+      <div className="flex-1 overflow-y-auto max-h-[500px] pr-1 space-y-2.5">
         {segments.length === 0 ? (
-          <div className="text-center py-12 px-4 border-2 border-dashed border-zinc-700 bg-black/40">
-            <Sparkles className="w-8 h-8 text-[#FFE600] mx-auto mb-2" />
-            <p className="text-xs font-black uppercase text-white">NO CAPTIONS LOADED</p>
-            <p className="text-[10px] text-zinc-400 max-w-xs mx-auto mt-1">
-              CLICK &quot;GENERATE AI CAPTIONS&quot; TO RUN OFFLINE SPEECH-TO-TEXT WITH WORD-BY-WORD TIMESTAMPS.
+          <div className="text-center py-14 px-4 border border-dashed border-zinc-800 rounded-xl bg-zinc-900/20">
+            <Sparkles className="w-7 h-7 text-indigo-400 mx-auto mb-2" />
+            <p className="text-xs font-medium text-zinc-200">No captions generated yet</p>
+            <p className="text-[11px] text-zinc-400 max-w-xs mx-auto mt-1">
+              Click &quot;Generate Captions&quot; to run offline speech recognition with word-by-word timestamps.
             </p>
           </div>
         ) : (
@@ -169,49 +168,46 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
             return (
               <div
                 key={seg.id}
-                className={`p-2.5 border-2 border-black transition ${
+                className={`p-3 rounded-lg border transition ${
                   isCurrentSegment
-                    ? 'bg-[#26282B] border-2 border-[#FFE600] shadow-brutal-yellow'
-                    : 'bg-[#1F2023] hover:bg-[#26282B]'
+                    ? 'border-indigo-500/70 bg-indigo-500/5 ring-1 ring-indigo-500/30'
+                    : 'border-zinc-800/80 bg-[#1a1d24] hover:border-zinc-700'
                 }`}
               >
-                <div className="flex items-center justify-between text-[10px] text-zinc-400 mb-1.5 font-bold">
-                  <span className="text-[#00FF66]">
-                    [{formatSec(seg.start)} ➔ {formatSec(seg.end)}]
+                <div className="flex items-center justify-between text-xs text-zinc-400 mb-2">
+                  <span className="font-mono text-[11px] text-indigo-400">
+                    {formatSec(seg.start)} ➔ {formatSec(seg.end)}
                   </span>
                   <button
                     onClick={() => onSeek(seg.start)}
-                    className="text-[#FFE600] hover:underline uppercase text-[9px] font-black"
+                    className="text-[10px] text-zinc-400 hover:text-white px-2 py-0.5 bg-zinc-800/60 hover:bg-zinc-800 rounded transition-colors"
                   >
-                    SEEK HERE ▶
+                    Seek to time
                   </button>
                 </div>
 
-                {/* Words Chips styled like stickers */}
-                <div className="flex flex-wrap items-center gap-1.5">
+                {/* Words Chips */}
+                <div className="flex flex-wrap gap-1.5">
                   {seg.words.map((w, wIdx) => {
-                    const isWordActive = currentTime >= w.start && currentTime <= w.end;
-                    const wordKey = `${seg.id}_${wIdx}`;
-                    const isEditing = editingWordId === wordKey;
+                    const isWordActive =
+                      currentTime >= w.start && currentTime <= w.end;
+                    const isEditing = editingWordId === `${seg.id}_${wIdx}`;
 
                     if (isEditing) {
                       return (
-                        <div key={wIdx} className="inline-flex items-center gap-1">
-                          <input
-                            type="text"
-                            autoFocus
-                            value={tempWordVal}
-                            onChange={(e) => setTempWordVal(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && saveEditWord(seg.id, wIdx)}
-                            className="px-2 py-0.5 bg-black border-2 border-[#FFE600] text-xs text-white focus:outline-none font-bold"
-                          />
-                          <button
-                            onClick={() => saveEditWord(seg.id, wIdx)}
-                            className="p-1 bg-[#00FF66] text-black border-2 border-black"
-                          >
-                            <Check className="w-3 h-3 stroke-[3]" />
-                          </button>
-                        </div>
+                        <input
+                          key={wIdx}
+                          type="text"
+                          autoFocus
+                          value={tempWordVal}
+                          onChange={(e) => setTempWordVal(e.target.value)}
+                          onBlur={() => saveEditWord(seg.id, wIdx)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveEditWord(seg.id, wIdx);
+                            if (e.key === 'Escape') setEditingWordId(null);
+                          }}
+                          className="bg-black border border-indigo-500 text-white px-2 py-0.5 rounded text-xs focus:outline-none"
+                        />
                       );
                     }
 
@@ -220,11 +216,11 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                         key={wIdx}
                         onClick={() => onSeek(w.start)}
                         onDoubleClick={() => startEditWord(seg.id, wIdx, w.word)}
-                        title="Click to jump video, double-click to edit text"
-                        className={`px-1.5 py-0.5 text-xs font-black uppercase cursor-pointer select-none border-2 border-black transition ${
+                        title="Click to jump · Double click to edit word"
+                        className={`cursor-pointer px-2 py-0.5 rounded text-xs transition-colors select-none ${
                           isWordActive
-                            ? 'bg-[#FFE600] text-black shadow-brutal-sm scale-105'
-                            : 'bg-black text-white hover:bg-zinc-800'
+                            ? 'bg-indigo-600 text-white font-medium shadow-sm'
+                            : 'bg-zinc-800/80 text-zinc-300 hover:bg-zinc-700 hover:text-white'
                         }`}
                       >
                         {w.word}
@@ -238,16 +234,17 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
         )}
       </div>
 
-      <div className="text-[10px] text-zinc-400 border-t-2 border-black pt-2 flex items-center justify-between font-bold">
-        <span>[TIP: DOUBLE-CLICK ANY WORD TO EDIT]</span>
-        <span>TOTAL: {segments.length} BLOCKS</span>
+      <div className="pt-2 border-t border-zinc-800/80 text-[11px] text-zinc-500 flex items-center justify-between">
+        <span>Click word to jump · Double-click to edit</span>
+        {segments.length > 0 && <span>{segments.length} dialogue blocks</span>}
       </div>
     </div>
   );
 };
 
-function formatSec(seconds: number) {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s < 10 ? '0' : ''}${s}`;
+function formatSec(sec: number) {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  const ms = Math.floor((sec % 1) * 10);
+  return `${m}:${s < 10 ? '0' : ''}${s}.${ms}`;
 }

@@ -89,20 +89,32 @@ def get_target_dimensions(aspect_ratio: str, quality: str = "1080p") -> Tuple[in
         else: # 16:9
             return (1920, 1080)
 
-def get_motion_blur_filter(intensity: int = 50) -> str:
+def get_motion_blur_filter(intensity: float = 0.80) -> str:
     """
-    Simulates ReelSmart Motion Blur (RSMB) / 180-degree cinema shutter.
-    Uses precise 2-frame temporal blending (tblend) with controlled shutter opacity.
-    Unlike naive multi-frame blending (tmix 5/7 frames which causes multi-image strobe
-    ghosting and degrades perceived fps), this blends only the adjacent temporal delta.
-    This preserves 100% of 60fps frame rate fluidity, leaves HUD/crosshairs sharp,
-    and produces authentic RSMB cinematic motion smear during camera pans and mouse flicks.
+    Simulates RSMB (ReelSmart Motion Blur) via Motion-Adaptive Masked Directional Smear:
+    1. Computes temporal motion difference mask (tblend=difference + colorlevels).
+    2. Any pixel with 0 movement (faces, text, background) has mask=0 (100% crystal sharp).
+    3. Fast-moving pixels (camera pan, action) receive directional shutter smear (dblur).
+    4. Merges via maskedmerge so motion is smeared along the pan without duplicate ghost outlines.
     """
-    clamped = max(10, min(100, intensity if intensity is not None else 50))
-    # Map intensity (10 - 100%) to shutter blend opacity (0.12 - 0.45)
-    # 50% = 0.30 (standard 180-degree cinema shutter)
-    opacity = round(0.12 + (clamped / 100.0) * 0.33, 2)
-    return f"tblend=all_mode=average:all_opacity={opacity}"
+    try:
+        val = float(intensity) if intensity is not None else 0.80
+    except (ValueError, TypeError):
+        val = 0.80
+
+    # Handle legacy percentage (e.g. 50 -> 0.80)
+    if val > 2.5:
+        val = val / 100.0
+
+    val = max(0.20, min(2.0, val))
+    radius = max(2, min(14, int(round(val * 6.0))))
+
+    return (
+        f"[0:v]split=3[mb_main][mb_blur_in][mb_diff_in];"
+        f"[mb_blur_in]dblur=angle=0:radius={radius}[mb_blurred];"
+        f"[mb_diff_in]tblend=all_mode=difference,format=gray,colorlevels=rimin=0.06:rimax=0.25[mb_mask];"
+        f"[mb_main][mb_blurred][mb_mask]maskedmerge[src_v];"
+    )
 
 def build_filter_complex(
     target_w: int,
@@ -125,12 +137,23 @@ def build_filter_complex(
 
     # Handle motion blur preprocessing if enabled
     if motion_blur and (motion_blur_intensity is None or motion_blur_intensity > 0):
-        mb_filter = get_motion_blur_filter(motion_blur_intensity or 50)
-        mb_prefix = f"[0:v]{mb_filter}[src_v];"
+        mb_prefix = get_motion_blur_filter(motion_blur_intensity or 0.80)
         src_label = "src_v"
     else:
         mb_prefix = ""
         src_label = "0:v"
+
+    # Unified zoom & pan calculation across all modes
+    # zoom scale: 1.0 (full scene / uncropped width) to 3.5 (full vertical cover)
+    z = max(1.0, min(3.5, zoom if zoom is not None else (3.16 if fit_mode == "crop" else 1.0)))
+    scaled_w = int(target_w * z)
+    if scaled_w % 2 != 0:
+        scaled_w += 1
+
+    fg_pipeline = (
+        f"scale={scaled_w}:-2,"
+        f"crop=w=min(iw\\,{target_w}):h=min(ih\\,{target_h}):x=max(0\\,(iw-{target_w})*{pan_x}):y=max(0\\,(ih-{target_h})*{pan_y})"
+    )
 
     if fit_mode == "blur_background":
         # Ultra-fast background blur: downscale background to 360x640, blur, then upscale
@@ -141,30 +164,17 @@ def build_filter_complex(
             f"[{src_label}]split=2[orig][bg];"
             f"[bg]scale=360:640:force_original_aspect_ratio=increase,"
             f"crop=360:640,boxblur={b_radius}:2,scale={target_w}:{target_h}[bgblur];"
-            f"[orig]scale={target_w}:{target_h}:force_original_aspect_ratio=decrease[fg];"
+            f"[orig]{fg_pipeline}[fg];"
             f"[bgblur][fg]overlay=(W-w)/2:(H-h)/2[composed];"
             f"[composed]ass={clean_sub_name}[outv]"
         )
-    elif fit_mode == "crop":
-        # zoom scale: 1.0 (full scene / uncropped width) to 3.16+ (full vertical cover)
-        z = max(1.0, min(3.5, zoom if zoom is not None else 3.16))
-        scaled_w = int(target_w * z)
-        if scaled_w % 2 != 0:
-            scaled_w += 1
-            
+    else:
+        # Clean solid black borders (letterbox/pillarbox) when uncropped, or full cover when zoomed
         filter_str = (
             f"{mb_prefix}"
-            f"[{src_label}]scale={scaled_w}:-2,"
-            f"crop=w=min(iw\\,{target_w}):h=min(ih\\,{target_h}):x=max(0\\,(iw-{target_w})*{pan_x}):y=max(0\\,(ih-{target_h})*{pan_y}),"
+            f"[{src_label}]{fg_pipeline},"
             f"pad={target_w}:{target_h}:max(0\\,({target_w}-iw)/2):max(0\\,({target_h}-ih)/2):black[cropped];"
             f"[cropped]ass={clean_sub_name}[outv]"
-        )
-    else: # 'fit' with solid black borders
-        filter_str = (
-            f"{mb_prefix}"
-            f"[{src_label}]scale={target_w}:{target_h}:force_original_aspect_ratio=decrease,"
-            f"pad={target_w}:{target_h}:(ow-iw)/2:(oh-ih)/2:black[padded];"
-            f"[padded]ass={clean_sub_name}[outv]"
         )
     
     return filter_str

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Eye } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Eye, GripVertical, MoveVertical } from 'lucide-react';
 import { UploadedVideo, CropConfig, CaptionStyle, SubtitleSegment, WordItem } from '../types';
 
 interface VideoPlayerProps {
@@ -9,6 +9,7 @@ interface VideoPlayerProps {
   segments: SubtitleSegment[];
   currentTime: number;
   onTimeUpdate: (time: number) => void;
+  onCaptionPositionChange?: (newYPercent: number) => void;
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -18,6 +19,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   segments,
   currentTime,
   onTimeUpdate,
+  onCaptionPositionChange,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const bgVideoRef = useRef<HTMLVideoElement>(null);
@@ -26,6 +28,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [duration, setDuration] = useState(video.duration || 0);
+  const [isHoveringCaption, setIsHoveringCaption] = useState(false);
+  const [isDraggingCaption, setIsDraggingCaption] = useState(false);
 
   // Sample word cycle when no segments exist yet
   const [sampleActiveIdx, setSampleActiveIdx] = useState(1);
@@ -86,6 +90,34 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   };
 
+  const handleCaptionMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!onCaptionPositionChange) return;
+
+    setIsDraggingCaption(true);
+    const container = containerRef.current;
+    if (!container) return;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      if (rect.height <= 0) return;
+      const relativeY = moveEvent.clientY - rect.top;
+      const rawPct = (relativeY / rect.height) * 100;
+      const clampedPct = Math.round(Math.max(15, Math.min(90, rawPct)));
+      onCaptionPositionChange(clampedPct);
+    };
+
+    const onMouseUp = () => {
+      setIsDraggingCaption(false);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
   // Find currently active words and chunk
   let activeChunk: WordItem[] = [];
   let activeWordIndex = -1;
@@ -135,21 +167,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center w-full font-mono">
-      {/* Motion Blur SVG Filter */}
-      <svg className="absolute w-0 h-0 overflow-hidden" aria-hidden="true">
-        <filter id="preview-motion-blur">
-          <feGaussianBlur
-            stdDeviation={`${isPlaying && crop.motion_blur ? Math.min(1.8, Math.max(0.5, (crop.motion_blur_intensity || 50) * 0.02)) : 0} 0`}
-          />
-        </filter>
-      </svg>
-
-      {/* Video Container with Heavy Brutalist Frame */}
+    <div className="flex flex-col items-center w-full">
+      {/* Video Container */}
       <div
         ref={containerRef}
         onClick={togglePlay}
-        className={`relative overflow-hidden bg-black border-4 border-black shadow-brutal-lg cursor-pointer select-none group ${
+        className={`relative overflow-hidden bg-black rounded-2xl border border-zinc-800 shadow-xl cursor-pointer select-none group ${
           aspectClasses[crop.aspect_ratio]
         }`}
       >
@@ -178,29 +201,58 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           onEnded={() => setIsPlaying(false)}
           className="relative z-10 w-full h-full object-contain transition-transform duration-75"
           style={{
-            ...(crop.fit_mode === 'crop'
-              ? {
-                  transform: `scale(${crop.zoom !== undefined ? crop.zoom : 3.16})`,
-                  transformOrigin: `${crop.pan_x * 100}% 50%`,
-                }
-              : {}),
-            filter: crop.motion_blur && isPlaying ? 'url(#preview-motion-blur)' : undefined,
+            transform: `scale(${crop.zoom !== undefined ? crop.zoom : (crop.fit_mode === 'crop' ? 3.16 : 1.0)})`,
+            transformOrigin: `${crop.pan_x * 100}% 50%`,
           }}
         />
 
-        {/* Layer 3: Dynamic Live Subtitles Overlay (Real or Sample Preview) */}
+        {/* Alignment Guide Line during drag */}
+        {isDraggingCaption && (
+          <div
+            className="absolute left-0 right-0 z-20 pointer-events-none flex items-center justify-between px-3 border-b-2 border-dashed border-indigo-400"
+            style={{
+              top: `${style.position_vertical}%`,
+              transform: 'translateY(-50%)',
+            }}
+          >
+            <span className="text-[10px] font-mono bg-indigo-600 text-white px-2 py-0.5 rounded shadow font-semibold">
+              Caption Line
+            </span>
+            <span className="text-[10px] font-mono font-bold bg-indigo-600 text-white px-2 py-0.5 rounded shadow">
+              {style.position_vertical}%
+            </span>
+          </div>
+        )}
+
+        {/* Layer 3: Dynamic Live Subtitles Overlay */}
         {shouldShowCaptions && (
           <div
-            className="absolute left-0 right-0 z-20 flex justify-center pointer-events-none px-4 transition-all duration-75"
+            className="absolute left-0 right-0 z-20 flex justify-center pointer-events-none px-4 transition-all duration-75 select-none"
             style={{
               top: `${style.position_vertical}%`,
               transform: 'translateY(-50%)',
             }}
           >
             <div
+              onMouseEnter={() => setIsHoveringCaption(true)}
+              onMouseLeave={() => setIsHoveringCaption(false)}
+              onMouseDown={handleCaptionMouseDown}
               style={fontStyle}
-              className="text-center font-black tracking-wide leading-snug drop-shadow-2xl"
+              className={`relative pointer-events-auto cursor-grab active:cursor-grabbing text-center font-bold tracking-wide leading-snug drop-shadow-2xl transition-all rounded-xl p-2 ${
+                isHoveringCaption || isDraggingCaption
+                  ? 'border-2 border-dashed border-indigo-400 bg-black/60 shadow-2xl backdrop-blur-sm'
+                  : 'border border-transparent'
+              }`}
+              title="Drag up or down to adjust caption position"
             >
+              {/* Drag Handle & Position Tooltip on Hover / Drag */}
+              {(isHoveringCaption || isDraggingCaption) && (
+                <div className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-semibold shadow-lg whitespace-nowrap pointer-events-none transition-all">
+                  <GripVertical className="w-3 h-3" />
+                  <span>Drag to reposition · {style.position_vertical}%</span>
+                </div>
+              )}
+
               <div
                 className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-3 py-1.5 max-w-full"
                 style={{
@@ -234,53 +286,48 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         )}
 
         {/* Hover Center Play Button */}
-        <div className="absolute inset-0 z-30 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-          <div className="p-4 bg-[#FFE600] text-black border-3 border-black shadow-brutal">
-            {isPlaying ? <Pause className="w-8 h-8 stroke-[3]" /> : <Play className="w-8 h-8 fill-black ml-0.5" />}
+        <div className="absolute inset-0 z-30 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+          <div className="w-14 h-14 rounded-full bg-white/90 text-black flex items-center justify-center shadow-lg backdrop-blur">
+            {isPlaying ? <Pause className="w-6 h-6 stroke-[2.5]" /> : <Play className="w-6 h-6 fill-black ml-0.5" />}
           </div>
         </div>
 
         {/* Top Video Specs Badges */}
-        <div className="absolute top-2 left-2 z-30 flex items-center gap-1 pointer-events-none">
-          <span className="bg-black text-[#FFE600] border-2 border-black px-2 py-0.5 text-[10px] font-black uppercase">
+        <div className="absolute top-3 left-3 z-30 flex items-center gap-1.5 pointer-events-none">
+          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-black/70 backdrop-blur-md border border-white/10 text-white">
             {crop.aspect_ratio}
           </span>
-          <span className="bg-[#FFE600] text-black border-2 border-black px-1.5 py-0.5 text-[10px] font-black uppercase">
-            {crop.fit_mode === 'blur_background' ? 'BLUR-BG' : crop.fit_mode}
+          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-black/70 backdrop-blur-md border border-white/10 text-zinc-300 capitalize">
+            {crop.fit_mode === 'blur_background' ? 'Blur BG' : crop.fit_mode === 'crop' ? 'Fill & Pan' : 'Letterbox'}
           </span>
-          {crop.motion_blur && (
-            <span className="bg-[#00F0FF] text-black border-2 border-black px-1.5 py-0.5 text-[10px] font-black uppercase shadow-brutal-sm">
-              M-BLUR {crop.motion_blur_intensity || 50}%
-            </span>
-          )}
         </div>
 
         {/* Sample Preview indicator pill */}
         {isSamplePreview && (
-          <div className="absolute top-2 right-2 z-30 pointer-events-none">
-            <span className="bg-[#FFE600] text-black border-2 border-black px-2 py-0.5 text-[9px] font-black uppercase shadow-brutal-sm flex items-center gap-1">
-              <Eye className="w-3 h-3 stroke-[3]" /> STYLE PREVIEW (CLICK TRANSCRIBE TO BURN)
+          <div className="absolute top-3 right-3 z-30 pointer-events-none">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-indigo-600/90 text-white backdrop-blur-md shadow-sm flex items-center gap-1">
+              <Eye className="w-3 h-3 stroke-[2]" /> Demo Style Preview
             </span>
           </div>
         )}
 
         {/* Silence indicator when real segments exist but no speech at current time */}
         {!isSamplePreview && segments.length > 0 && activeChunk.length === 0 && (
-          <div className="absolute top-2 right-2 z-30 pointer-events-none">
-            <span className="bg-black/90 text-zinc-400 border border-black px-2 py-0.5 text-[9px] font-mono shadow-brutal-sm">
-              [SILENCE // SPEECH STARTS {segments[0]?.start?.toFixed(1)}s]
+          <div className="absolute top-3 right-3 z-30 pointer-events-none">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-black/80 text-zinc-400 backdrop-blur-md border border-white/10">
+              Audio Silence · Speech at {segments[0]?.start?.toFixed(1)}s
             </span>
           </div>
         )}
       </div>
 
       {/* Scrub & Playback Controls Bar */}
-      <div className="w-full max-w-xl mt-3 px-3 py-2 bg-[#18191B] border-2 border-black shadow-brutal flex items-center gap-3">
+      <div className="w-full max-w-xl mt-4 px-4 py-2.5 bg-[#14161b] border border-zinc-800 rounded-xl flex items-center gap-3 shadow-sm">
         <button
           onClick={togglePlay}
-          className="btn-brutal bg-[#FFE600] hover:bg-[#FFF066] text-black p-1.5"
+          className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors shadow-sm"
         >
-          {isPlaying ? <Pause className="w-4 h-4 stroke-[3]" /> : <Play className="w-4 h-4 fill-black" />}
+          {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-white" />}
         </button>
 
         <button
@@ -288,12 +335,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             if (videoRef.current) videoRef.current.currentTime = 0;
             onTimeUpdate(0);
           }}
-          className="btn-brutal bg-[#26282B] text-white hover:text-[#FFE600] p-1.5"
+          className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
         >
           <RotateCcw className="w-4 h-4" />
         </button>
 
-        {/* Brutalist Slider */}
+        {/* Slider */}
         <input
           type="range"
           min={0}
@@ -301,19 +348,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           step={0.05}
           value={currentTime}
           onChange={handleSeek}
-          className="flex-1 h-3 bg-black border-2 border-black appearance-none cursor-pointer accent-[#FFE600]"
+          className="flex-1 h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
         />
 
         {/* Time display */}
-        <div className="text-xs bg-black text-[#00FF66] border border-black px-2 py-1 font-bold w-24 text-center">
+        <div className="text-xs font-mono text-zinc-400 w-24 text-center">
           {formatTime(currentTime)} / {formatTime(duration)}
         </div>
 
         <button
           onClick={toggleMute}
-          className="btn-brutal bg-[#26282B] text-white p-1.5"
+          className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
         >
-          {isMuted ? <VolumeX className="w-4 h-4 text-[#FF3366]" /> : <Volume2 className="w-4 h-4" />}
+          {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4" />}
         </button>
       </div>
     </div>

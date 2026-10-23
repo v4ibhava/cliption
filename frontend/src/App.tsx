@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Download, RefreshCw, Scissors, Terminal, Wrench } from 'lucide-react';
+import {
+  Sparkles,
+  Download,
+  Settings,
+  Scissors,
+  CheckCircle2,
+  HardDrive,
+  UploadCloud,
+  ChevronRight,
+  Film,
+  Zap,
+  Cpu
+} from 'lucide-react';
 import {
   SystemSpecs,
   UploadedVideo,
@@ -7,8 +19,6 @@ import {
   CaptionStyle,
   SubtitleSegment,
 } from './types';
-import { HardwareBanner } from './components/HardwareBanner';
-import { ModelTierModal } from './components/ModelTierModal';
 import { VideoUploader } from './components/VideoUploader';
 import { VideoPlayer } from './components/VideoPlayer';
 import { AspectSelector } from './components/AspectSelector';
@@ -18,15 +28,13 @@ import { ExportModal } from './components/ExportModal';
 import { SetupScreen } from './components/SetupScreen';
 
 export const App: React.FC = () => {
-  // First screen setup toggle: defaults to true if not previously completed
-  const [isSetupView, setIsSetupView] = useState(() => {
-    return !localStorage.getItem('cliption_setup_done');
-  });
+  // Step-by-step page-wise navigation: 'setup' -> 'upload' -> 'editor'
+  // Starts with 'setup' screen first as requested
+  const [currentStep, setCurrentStep] = useState<'setup' | 'upload' | 'editor'>('setup');
 
   const [specs, setSpecs] = useState<SystemSpecs | null>(null);
   const [selectedTier, setSelectedTier] = useState<'small' | 'medium' | 'large'>('small');
   const [selectedDevice, setSelectedDevice] = useState<'cuda' | 'cpu'>('cpu');
-  const [isTierModalOpen, setIsTierModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Video State
@@ -79,11 +87,6 @@ export const App: React.FC = () => {
       .catch((err) => console.error('Failed to detect system specs', err));
   }, []);
 
-  const handleCompleteSetup = () => {
-    localStorage.setItem('cliption_setup_done', 'true');
-    setIsSetupView(false);
-  };
-
   // Transcribe handler
   const handleTranscribe = async () => {
     if (!video) return;
@@ -114,157 +117,198 @@ export const App: React.FC = () => {
     }
   };
 
-  // If setup screen is active, show it as first screen
-  if (isSetupView) {
-    return (
-      <SetupScreen
-        specs={specs}
-        selectedTier={selectedTier}
-        selectedDevice={selectedDevice}
-        onSelectTier={setSelectedTier}
-        onSelectDevice={setSelectedDevice}
-        onCompleteSetup={handleCompleteSetup}
-      />
-    );
-  }
+  const tierDisplayNames = {
+    small: 'Small (Base)',
+    medium: 'Medium (Small)',
+    large: 'Large (V3 Turbo)',
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0C0D0E] text-[#F3F4F6] font-mono selection:bg-[#FFE600] selection:text-black">
-      {/* Top Hardware Banner */}
-      <HardwareBanner
-        specs={specs}
-        selectedTier={selectedTier}
-        selectedDevice={selectedDevice}
-        onOpenTierModal={() => setIsTierModalOpen(true)}
-        onOpenSetup={() => setIsSetupView(true)}
-      />
-
-      {/* Main Navigation Header */}
-      <header className="px-5 py-3 border-b-2 border-black bg-[#141517] flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-[#FFE600] text-black border-2 border-black flex items-center justify-center shadow-brutal-sm font-black">
-            <Scissors className="w-5 h-5 stroke-[3]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-black tracking-wider text-white uppercase">
-                CLIPTION <span className="text-[#FFE600]">// STUDIO</span>
-              </h1>
-              <span className="bg-[#00FF66] text-black border border-black text-[9px] font-black px-1.5 py-0.2 uppercase shadow-brutal-sm">
-                100% OFFLINE
-              </span>
+    <div className="min-h-screen flex flex-col bg-[#0b0c0e] text-[#f4f4f5]">
+      {/* Clean Minimal Header with Stepper */}
+      <header className="border-b border-zinc-800/80 bg-[#121418] px-4 md:px-8 py-3.5 flex items-center justify-between gap-4 sticky top-0 z-40">
+        {/* Brand & Step Navigation */}
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold shadow-sm">
+              <Scissors className="w-4 h-4 stroke-[2.5]" />
             </div>
-            <p className="text-[10px] text-zinc-400 uppercase tracking-tight">
-              SMART CROP & MULTILINGUAL DYNAMIC CAPTIONS (CPU + NVIDIA CUDA)
-            </p>
+            <div>
+              <span className="text-base font-semibold text-white tracking-tight">Cliption</span>
+              <span className="text-[10px] text-zinc-400 block -mt-0.5">Offline Video Studio</span>
+            </div>
           </div>
+
+          {/* Stepper Navigation */}
+          <nav className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-zinc-400">
+            <button
+              onClick={() => setCurrentStep('setup')}
+              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                currentStep === 'setup'
+                  ? 'bg-zinc-800 text-white font-semibold'
+                  : 'hover:text-zinc-200'
+              }`}
+            >
+              <span className="w-4 h-4 rounded-full bg-zinc-700 text-[10px] flex items-center justify-center text-zinc-300">1</span>
+              <span>Setup & Models</span>
+            </button>
+
+            <ChevronRight className="w-3.5 h-3.5 text-zinc-600" />
+
+            <button
+              onClick={() => setCurrentStep('upload')}
+              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                currentStep === 'upload'
+                  ? 'bg-zinc-800 text-white font-semibold'
+                  : 'hover:text-zinc-200'
+              }`}
+            >
+              <span className="w-4 h-4 rounded-full bg-zinc-700 text-[10px] flex items-center justify-center text-zinc-300">2</span>
+              <span>Upload Video</span>
+            </button>
+
+            {video && (
+              <>
+                <ChevronRight className="w-3.5 h-3.5 text-zinc-600" />
+                <button
+                  onClick={() => setCurrentStep('editor')}
+                  className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                    currentStep === 'editor'
+                      ? 'bg-zinc-800 text-white font-semibold'
+                      : 'hover:text-zinc-200'
+                  }`}
+                >
+                  <span className="w-4 h-4 rounded-full bg-zinc-700 text-[10px] flex items-center justify-center text-zinc-300">3</span>
+                  <span>Editor & Export</span>
+                </button>
+              </>
+            )}
+          </nav>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        {/* Right Info & Actions */}
+        <div className="flex items-center gap-3">
+          {/* Active Model Pill */}
           <button
-            onClick={() => setIsSetupView(true)}
-            className="btn-brutal bg-[#26282B] text-white hover:text-[#FFE600] px-3 py-1.5 text-xs flex items-center gap-1.5"
-            title="Return to Dependency & Model Setup Screen"
+            onClick={() => setCurrentStep('setup')}
+            title="Click to change model or inspect device"
+            className="flex items-center gap-1.5 px-3 py-1 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-full text-xs text-zinc-300 transition-colors"
           >
-            <Wrench className="w-3.5 h-3.5 text-[#FFE600]" />
-            <span>SETUP WIZARD</span>
+            {specs?.has_nvidia ? (
+              <Zap className="w-3 h-3 text-emerald-400 fill-emerald-400" />
+            ) : (
+              <Cpu className="w-3 h-3 text-indigo-400" />
+            )}
+            <span className="font-medium text-white">{tierDisplayNames[selectedTier]}</span>
+            <span className="text-[10px] text-zinc-500 uppercase">({selectedDevice})</span>
           </button>
 
-          {video && (
+          {currentStep === 'editor' && (
             <>
               <button
-                onClick={() => setVideo(null)}
-                className="btn-brutal bg-[#26282B] text-white hover:text-[#FFE600] px-3 py-1.5 text-xs flex items-center gap-1.5"
+                onClick={() => setCurrentStep('upload')}
+                className="px-3 py-1.5 text-xs text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>NEW CLIP</span>
+                Change Video
               </button>
 
               <button
                 onClick={() => setIsExportModalOpen(true)}
-                className="btn-brutal bg-[#FFE600] hover:bg-[#FFF066] text-black px-4 py-1.5 text-xs flex items-center gap-1.5"
+                className="px-4 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
               >
-                <Download className="w-3.5 h-3.5 stroke-[3]" />
-                <span>EXPORT {crop.aspect_ratio}</span>
+                <Download className="w-3.5 h-3.5" />
+                <span>Export Video</span>
               </button>
             </>
+          )}
+
+          {currentStep !== 'setup' && (
+            <button
+              onClick={() => setCurrentStep('setup')}
+              title="System & Model Setup"
+              className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
           )}
         </div>
       </header>
 
-      {/* Main Studio Area */}
-      <main className="flex-1 flex flex-col p-4 md:p-6 overflow-hidden">
-        {!video ? (
-          <div className="flex-1 flex flex-col items-center justify-center my-auto">
-            <div className="text-center mb-6 max-w-xl">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#26282B] text-[#FFE600] border-2 border-black text-xs font-black uppercase mb-4 shadow-brutal-sm">
-                <Terminal className="w-3.5 h-3.5" />
-                NEO-BRUTALIST CREATOR TOOLKIT
-              </div>
-              <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight uppercase mb-3">
-                CROP & CAPTION <br />
-                <span className="text-[#FFE600] underline decoration-4 underline-offset-4">VIRAL SHORTS</span> OFFLINE
-              </h2>
-              <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed uppercase">
-                Reframe horizontal video to 9:16 reels, transcribe speech offline on CPU or NVIDIA GPU, and style high-energy captions like MrBeast & Hormozi.
-              </p>
-            </div>
-
-            <VideoUploader onVideoUploaded={(v) => setVideo(v)} />
+      {/* Main Multi-Step View Container */}
+      <main className="flex-1 flex flex-col overflow-x-hidden">
+        {/* Step 1: Setup & Models Screen (Appears FIRST, zero video upload here) */}
+        {currentStep === 'setup' && (
+          <div className="flex-1 flex items-center justify-center p-4 md:p-8">
+            <SetupScreen
+              specs={specs}
+              selectedTier={selectedTier}
+              selectedDevice={selectedDevice}
+              onSelectTier={setSelectedTier}
+              onSelectDevice={setSelectedDevice}
+              onContinue={() => setCurrentStep('upload')}
+            />
           </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 h-full max-w-[1750px] w-full mx-auto">
-            {/* Left Column: Aspect Ratio & Caption Styler */}
-            <div className="lg:col-span-3 space-y-4 overflow-y-auto max-h-[calc(100vh-140px)] pr-1">
-              <AspectSelector
-                crop={crop}
-                onChange={(updated) => setCrop((prev) => ({ ...prev, ...updated }))}
-              />
+        )}
 
-              <CaptionStyler
-                style={captionStyle}
-                onChange={(updated) => setCaptionStyle((prev) => ({ ...prev, ...updated }))}
-              />
-            </div>
+        {/* Step 2: Upload Video Screen */}
+        {currentStep === 'upload' && (
+          <div className="flex-1 flex items-center justify-center p-4 md:p-8">
+            <VideoUploader
+              onVideoUploaded={(v) => {
+                setVideo(v);
+                setCurrentStep('editor');
+              }}
+              onBackToSetup={() => setCurrentStep('setup')}
+            />
+          </div>
+        )}
 
-            {/* Middle Column: Interactive Video Player */}
-            <div className="lg:col-span-5 flex flex-col items-center justify-center bg-[#141517] border-2 border-black p-4 shadow-brutal">
-              <VideoPlayer
-                video={video}
-                crop={crop}
-                style={captionStyle}
-                segments={segments}
-                currentTime={currentTime}
-                onTimeUpdate={setCurrentTime}
-              />
-            </div>
+        {/* Step 3: Studio Editor Screen */}
+        {currentStep === 'editor' && video && (
+          <div className="flex-1 p-4 md:p-6 overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 h-full max-w-[1750px] w-full mx-auto">
+              {/* Left Column: Framing & Caption Style */}
+              <div className="lg:col-span-3 space-y-4 overflow-y-auto max-h-[calc(100vh-100px)] pr-1">
+                <AspectSelector
+                  crop={crop}
+                  onChange={(updated) => setCrop((prev) => ({ ...prev, ...updated }))}
+                />
 
-            {/* Right Column: Transcript & Multilingual Editor */}
-            <div className="lg:col-span-4 h-full">
-              <TranscriptEditor
-                segments={segments}
-                currentTime={currentTime}
-                detectedLanguage={detectedLanguage}
-                onUpdateSegments={setSegments}
-                onSeek={(time) => setCurrentTime(time)}
-                onTranscribe={handleTranscribe}
-                isTranscribing={isTranscribing}
-              />
+                <CaptionStyler
+                  style={captionStyle}
+                  onChange={(updated) => setCaptionStyle((prev) => ({ ...prev, ...updated }))}
+                />
+              </div>
+
+              {/* Middle Column: Interactive Video Player */}
+              <div className="lg:col-span-5 flex flex-col items-center justify-center bg-[#13151a] border border-zinc-800 rounded-2xl p-4 shadow-sm">
+                <VideoPlayer
+                  video={video}
+                  crop={crop}
+                  style={captionStyle}
+                  segments={segments}
+                  currentTime={currentTime}
+                  onTimeUpdate={setCurrentTime}
+                  onCaptionPositionChange={(y) => setCaptionStyle((prev) => ({ ...prev, position_vertical: y }))}
+                />
+              </div>
+
+              {/* Right Column: Transcript & Multilingual Editor */}
+              <div className="lg:col-span-4 h-full">
+                <TranscriptEditor
+                  segments={segments}
+                  currentTime={currentTime}
+                  detectedLanguage={detectedLanguage}
+                  onUpdateSegments={setSegments}
+                  onSeek={(time) => setCurrentTime(time)}
+                  onTranscribe={handleTranscribe}
+                  isTranscribing={isTranscribing}
+                />
+              </div>
             </div>
           </div>
         )}
       </main>
-
-      {/* Hardware & Model Tier Modal */}
-      <ModelTierModal
-        isOpen={isTierModalOpen}
-        onClose={() => setIsTierModalOpen(false)}
-        specs={specs}
-        selectedTier={selectedTier}
-        selectedDevice={selectedDevice}
-        onSelectTier={setSelectedTier}
-        onSelectDevice={setSelectedDevice}
-      />
 
       {/* Export & Render Modal */}
       {video && (
