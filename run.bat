@@ -1,7 +1,7 @@
 @echo off
-title Cliption - Smart Video Cropper & Offline AI Captions
+title Cliption - Smart Video Cropper ^& Offline AI Captions
 echo ========================================================
-echo   Cliption - Smart Video Cropper & Dynamic Captions
+echo   Cliption - Smart Video Cropper ^& Dynamic Captions
 echo   100%% Offline AI Studio (NVIDIA GPU + CPU)
 echo ========================================================
 echo.
